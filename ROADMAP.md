@@ -18,6 +18,14 @@ and constraints (budget, legal, safety policy).
 - **Platform**: WordPress on existing cPanel shared hosting (PHP/MySQL only, no SSH).
 - **Pilot cert**: PMP — unofficial/independent prep content only, no PMI trademark/logo use.
 - **Pilot language**: English only, for now.
+- **Target audience**: working professionals aged 18-40, globally, pursuing career
+  advancement — not students or academics. Drives tone (practical/motivating,
+  career-payoff framed, not textbook-dry), content pacing (short, mobile-scannable),
+  and future design direction (modern/app-like, not "online course" aesthetic).
+  Baked into the AI system prompt (`elwanito-core` safety policy default) as of
+  this decision — existing owners must manually update their saved "Safety policy"
+  field in Elwanito AI settings since WordPress options don't auto-update from
+  a new plugin default once a value is already saved.
 - **Content data model**: a custom post type (`elwanito_lesson`) owned entirely by our
   plugin, not integrated with a third-party LMS's internal schema (Tutor LMS etc.) —
   chosen because this coding environment cannot reach WordPress.org or the live
@@ -67,7 +75,8 @@ see `DEPLOY.md` step 4 — this was flagged but not explicitly re-confirmed).
 2. **Spot-check 5-10 published lessons for quality** — accuracy, tone, no
    safety-policy violations, no PMI trademark/endorsement claims slipping
    through. Auto-publish means nothing is gating this anymore.
-3. **Ship a real theme/skin** — a simple, clean, mobile-friendly design
+3. **Ship a real theme/skin** — modern, mobile-first, app-like (think career/skills
+   app, not "online university course"), aimed at 18-40 working professionals —
    independent of content (goal: skin swappable without touching content).
 4. **Add TTS audio per lesson** (Amazon Polly or Google Cloud TTS — cheap).
 5. **Add PDF booklet export** per module/course.

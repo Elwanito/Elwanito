@@ -35,7 +35,11 @@ class Elwanito_Settings {
 			. "Never include political, religious, sexual, violent, or discriminatory content or framing.\n"
 			. "Stay strictly on the certification exam subject matter.\n"
 			. "If a fact is uncertain, say so rather than inventing it.\n"
-			. "Write for a global audience: plain, simple English, no region-specific idioms or slang.";
+			. "Write for a global audience: plain, simple English, no region-specific idioms or slang.\n"
+			. "Primary audience: working professionals aged 18-40 building their careers. "
+			. "Tone: practical, direct, motivating - connect concepts to real career payoff (promotions, "
+			. "passing the exam, doing the job better) rather than academic or textbook-dry. "
+			. "Keep paragraphs short and scannable for mobile reading in short bursts, not long-form reading.";
 	}
 
 	public function register_settings() {
