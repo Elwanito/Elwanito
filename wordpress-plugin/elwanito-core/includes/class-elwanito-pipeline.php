@@ -235,6 +235,32 @@ class Elwanito_Pipeline {
 		wp_safe_redirect( $redirect );
 		exit;
 	}
+
+	/**
+	 * admin-post.php handler for the "Generate One Lesson Now" button -
+	 * runs the pipeline immediately instead of waiting for the daily cron,
+	 * useful for testing right after setup.
+	 */
+	public static function handle_generate_now_request() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Insufficient permissions.' );
+		}
+		check_admin_referer( 'elwanito_generate_now' );
+
+		$result = self::process_next_queued_item();
+
+		if ( is_wp_error( $result ) ) {
+			$args = array( 'elwanito_error' => rawurlencode( $result->get_error_message() ) );
+		} elseif ( false === $result ) {
+			$args = array( 'elwanito_error' => rawurlencode( 'Topics queue is empty - click "Generate Outline" first.' ) );
+		} else {
+			$args = array( 'elwanito_generated' => 1 );
+		}
+
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php?page=elwanito-settings' ) ) );
+		exit;
+	}
 }
 
 add_action( 'admin_post_elwanito_generate_outline', array( 'Elwanito_Pipeline', 'handle_generate_outline_request' ) );
+add_action( 'admin_post_elwanito_generate_now', array( 'Elwanito_Pipeline', 'handle_generate_now_request' ) );

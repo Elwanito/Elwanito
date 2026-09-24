@@ -130,6 +130,14 @@ class Elwanito_Settings {
 				<?php submit_button( 'Save Settings' ); ?>
 			</form>
 
+			<?php if ( isset( $_GET['elwanito_queued'] ) ) : ?>
+				<div class="notice notice-success"><p>Outline generated: <?php echo (int) $_GET['elwanito_queued']; ?> topics added to the queue.</p></div>
+			<?php elseif ( isset( $_GET['elwanito_generated'] ) ) : ?>
+				<div class="notice notice-success"><p>Lesson generated - check the <a href="<?php echo esc_url( admin_url( 'admin.php?page=elwanito-review' ) ); ?>">Review Queue</a>.</p></div>
+			<?php elseif ( isset( $_GET['elwanito_error'] ) ) : ?>
+				<div class="notice notice-error"><p><?php echo esc_html( wp_unslash( $_GET['elwanito_error'] ) ); ?></p></div>
+			<?php endif; ?>
+
 			<hr>
 			<h2>Generate a course outline now</h2>
 			<p>Uses the outline model once to propose ~20-30 bite-sized lesson topics for the certification above, and adds them to the topics queue for the daily pipeline to work through.</p>
@@ -137,6 +145,14 @@ class Elwanito_Settings {
 				<?php wp_nonce_field( 'elwanito_generate_outline' ); ?>
 				<input type="hidden" name="action" value="elwanito_generate_outline">
 				<?php submit_button( 'Generate Outline', 'secondary' ); ?>
+			</form>
+
+			<h2>Generate one lesson right now</h2>
+			<p>Pulls the oldest queued topic and generates its lesson immediately, instead of waiting for the daily cron. Good for testing.</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'elwanito_generate_now' ); ?>
+				<input type="hidden" name="action" value="elwanito_generate_now">
+				<?php submit_button( 'Generate One Lesson Now', 'secondary' ); ?>
 			</form>
 		</div>
 		<?php
