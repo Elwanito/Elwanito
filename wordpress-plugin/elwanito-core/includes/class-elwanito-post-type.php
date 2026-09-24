@@ -17,6 +17,7 @@ class Elwanito_Post_Type {
 	public function __construct() {
 		add_action( 'init', array( $this, 'register' ) );
 		add_filter( 'the_content', array( $this, 'append_quiz' ) );
+		add_shortcode( 'elwanito_lessons', array( $this, 'render_lesson_list' ) );
 	}
 
 	public function register() {
@@ -98,5 +99,56 @@ class Elwanito_Post_Type {
 		</div>
 		<?php
 		return $content . ob_get_clean();
+	}
+
+	/**
+	 * [elwanito_lessons] - lists published lessons grouped by module, so an
+	 * owner can drop this into any Page (including the homepage) without
+	 * depending on the active theme knowing about this post type at all.
+	 */
+	public function render_lesson_list( $atts ) {
+		$atts = shortcode_atts( array( 'limit' => 100 ), $atts );
+
+		$lessons = get_posts(
+			array(
+				'post_type'      => 'elwanito_lesson',
+				'post_status'    => 'publish',
+				'posts_per_page' => absint( $atts['limit'] ),
+				'orderby'        => 'date',
+				'order'          => 'ASC',
+			)
+		);
+
+		if ( empty( $lessons ) ) {
+			return '<p>No lessons published yet.</p>';
+		}
+
+		$grouped = array();
+		foreach ( $lessons as $lesson ) {
+			$module = get_post_meta( $lesson->ID, '_elwanito_module', true );
+			$module = $module ? $module : 'General';
+			$grouped[ $module ][] = $lesson;
+		}
+
+		ob_start();
+		?>
+		<div class="elwanito-lesson-list">
+			<?php foreach ( $grouped as $module => $module_lessons ) : ?>
+				<h3><?php echo esc_html( $module ); ?></h3>
+				<ul>
+					<?php foreach ( $module_lessons as $lesson ) : ?>
+						<?php $minutes = get_post_meta( $lesson->ID, '_elwanito_est_minutes', true ); ?>
+						<li>
+							<a href="<?php echo esc_url( get_permalink( $lesson ) ); ?>"><?php echo esc_html( $lesson->post_title ); ?></a>
+							<?php if ( $minutes ) : ?>
+								<span class="elwanito-est-minutes"> - <?php echo esc_html( $minutes ); ?> min</span>
+							<?php endif; ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endforeach; ?>
+		</div>
+		<?php
+		return ob_get_clean();
 	}
 }
