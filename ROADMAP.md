@@ -63,6 +63,22 @@ better to install WordPress fresh there directly rather than migrate later
 from `quantaprojex.com/tutify/` - very little content exists yet, so this is
 the cheap moment to do that.
 
+## Status as of 2026-09-25, third session
+
+Owner pointed at a curated free-LLM-API list (mnfst/awesome-free-llm-apis).
+Checked it directly: every provider on it (Google Gemini, Cohere, Mistral AI,
+Zhipu AI) already uses the OpenAI-compatible chat-completions format - same
+one Groq/OpenRouter/self-hosted Ollama use. So the "OpenAI-compatible
+endpoint" provider option built last session **already covered all of
+them** architecturally; no rebuild needed there. What was actually missing
+was convenience: added a "Quick pick" dropdown in settings (elwanito-core
+v0.4.1) that auto-fills the correct Base URL + example model for Mistral,
+Gemini, Groq, OpenRouter, Cohere, or Zhipu, plus Custom for anything else
+(self-hosted included). Free-tier limits worth knowing (from the source
+doc): Mistral 1B tokens/month (best for real volume), Gemini 100-1K
+requests/day, Cohere only 1,000 requests/month total (limited), Zhipu
+signup may require a Chinese phone number.
+
 ## Status as of 2026-09-25, second session
 
 Fixed/built (elwanito-core v0.4.0):

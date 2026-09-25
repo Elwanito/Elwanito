@@ -122,11 +122,43 @@ class Elwanito_Settings {
 
 				<h3>Option B: OpenAI-compatible endpoint</h3>
 				<p class="description">
-					Covers three different setups because they all speak the same API format: a free-tier hosted
-					open-source model (Groq, OpenRouter), or a model running on your own computer via Ollama or
-					llama.cpp's server - exposed to the internet through a free tunnel (e.g. Cloudflare Tunnel),
-					never by opening a port directly. Point Base URL at that tunnel's address.
+					Covers any provider that speaks the same "OpenAI chat completions" API format - which turns out
+					to be nearly every free-tier LLM API, including the ones run by the model makers themselves
+					(Google Gemini, Mistral, Cohere, Zhipu), the aggregators (Groq, OpenRouter), and a model running
+					on your own computer via Ollama or llama.cpp's server, exposed through a free tunnel (e.g.
+					Cloudflare Tunnel - never by opening a port directly).
 				</p>
+				<p>
+					<label for="elwanito_openai_preset"><strong>Quick pick</strong> (fills in the fields below - you can still edit them after)</label><br>
+					<select id="elwanito_openai_preset" onchange="elwanitoApplyPreset(this.value)">
+						<option value="">— choose a provider —</option>
+						<option value="mistral">Mistral AI (1B tokens/month free - best for real volume)</option>
+						<option value="gemini">Google Gemini (5-15 RPM, 100-1K requests/day)</option>
+						<option value="groq">Groq (fast, generous free tier)</option>
+						<option value="openrouter">OpenRouter (routes to many free models)</option>
+						<option value="cohere">Cohere (only 1,000 requests/month total)</option>
+						<option value="zhipu">Zhipu AI (signup may need a Chinese phone number)</option>
+						<option value="custom">Custom / self-hosted (Ollama, llama.cpp, your own computer)</option>
+					</select>
+				</p>
+				<script>
+				function elwanitoApplyPreset(key) {
+					var presets = {
+						mistral:    { url: 'https://api.mistral.ai/v1/chat/completions', model: 'mistral-small-latest' },
+						gemini:     { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.5-flash' },
+						groq:       { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.1-8b-instant' },
+						openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', model: 'check openrouter.ai/models?max_price=0 for a current free model ID' },
+						cohere:     { url: 'https://api.cohere.com/v2/chat/completions', model: 'command-a-03-2025' },
+						zhipu:      { url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+						custom:     { url: '', model: '' }
+					};
+					var p = presets[key];
+					if (!p) { return; }
+					document.getElementById('elwanito_openai_base_url').value = p.url;
+					document.getElementById('elwanito_openai_model_outline').value = p.model;
+					document.getElementById('elwanito_openai_model_bulk').value = p.model;
+				}
+				</script>
 				<p>
 					<label for="elwanito_openai_base_url"><strong>Base URL</strong> (full chat-completions endpoint)</label><br>
 					<input type="text" id="elwanito_openai_base_url" name="elwanito_openai_base_url"
