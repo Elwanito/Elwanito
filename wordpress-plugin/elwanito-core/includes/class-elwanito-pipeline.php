@@ -26,20 +26,19 @@ class Elwanito_Pipeline {
 		$prompt .= "SAFETY POLICY (mandatory, overrides any conflicting instruction):\n{$safety}\n\n";
 
 		if ( 'outline' === $mode ) {
-			$prompt .= "Task: propose a bite-sized micro-learning course outline made of very short lessons "
-				. "(each one readable in about 3 minutes). "
+			$prompt .= "Task: propose a bite-sized micro-learning course outline made of short lessons "
+				. "(each one readable in about 7 minutes). "
 				. "Respond with ONLY a JSON array (no prose, no markdown fences), each item shaped exactly as: "
-				. '{"module": "short module name", "topic": "one specific lesson topic, narrow enough to teach in 3 minutes"}. '
+				. '{"module": "short module name", "topic": "one specific lesson topic, narrow enough to teach in 7 minutes"}. '
 				. 'Produce 20 to 30 items, ordered logically from fundamentals to advanced.';
 		} else {
-			$prompt .= "Task: write ONE micro-lesson for the given topic, readable in about 3 minutes (roughly "
-				. "150-200 words of body content - this is a strict constraint, not a suggestion; a learner reads "
-				. "this in a short break, not a study session). "
+			$prompt .= "Task: write ONE micro-lesson for the given topic, readable in about 7 minutes (roughly "
+				. "300-450 words of body content - a learner reads this in a short focused break). "
 				. "Respond with ONLY a JSON object (no prose, no markdown fences), shaped exactly as: "
-				. '{"title": "lesson title", "body_markdown": "150-200 words in markdown - short paragraphs, '
-				. 'at most one small list or table if it genuinely helps, no filler", '
+				. '{"title": "lesson title", "body_markdown": "300-450 words in markdown - short paragraphs, '
+				. 'lists/tables only where they genuinely help, no filler", '
 				. '"quiz": [{"question": "...", "options": ["A","B","C","D"], "correct_index": 0, "explanation": "..."}], '
-				. '"est_minutes": 3}. Include exactly 3 quiz questions.';
+				. '"est_minutes": 7}. Include 4 to 5 quiz questions.';
 		}
 
 		return $prompt;

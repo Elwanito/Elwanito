@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Elwanito Core
  * Description: AI content pipeline, guest progress tracking, and an owner approval queue for the certification tutorial platform. Generates unofficial exam-prep lessons and quizzes via the Anthropic API, holds everything in a draft review queue until approved.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: elwanito-core
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ELWANITO_VERSION', '0.3.0' );
+define( 'ELWANITO_VERSION', '0.3.1' );
 define( 'ELWANITO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ELWANITO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

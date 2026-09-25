@@ -44,13 +44,24 @@ and constraints (budget, legal, safety policy).
   permissions issue. Every fix ships as a plugin file the owner uploads and
   tests themselves; there is no way around this, don't re-attempt it.
 
-## Branding direction (new)
+## Branding direction (updated - supersedes the earlier LRN3/3-minute idea)
 
-Owner's idea, adopted: lessons target **~3 minutes**, not 7. Working concept
-name: **LRN3** ("learn in 3 [minutes]") - short, describes the mechanic
-directly. "Tutify" is out (name collision found). See "Next steps" for the
-concrete domain shortlist - not yet purchased, availability unverified from
-this sandbox (can't reach domain registrars from here either).
+Owner observed the model naturally produces ~7-minute lessons and decided to
+brand around that instead of fighting it: **site name is `magister7.com`**.
+Lesson length target reverted to ~7 minutes / 300-450 words (was briefly
+3 minutes/150-200 words for one session - reverted, see pipeline prompt).
+"Tutify" is out (name collision found).
+
+Flagged once, not blocking: "Magister" is a real academic degree title in
+several European systems (Germany, Poland, Sweden) - worth a one-line "not
+an accredited institution" disclaimer on the site later so it doesn't read
+as a formal degree, but not a trademark issue (generic historical term).
+
+Open question as of this decision: is `magister7.com` already registered
+and pointed at the hosting, or does it still need to be registered? If new,
+better to install WordPress fresh there directly rather than migrate later
+from `quantaprojex.com/tutify/` - very little content exists yet, so this is
+the cheap moment to do that.
 
 ## Status as of last session (2026-09-25)
 
@@ -114,11 +125,12 @@ see `DEPLOY.md` step 4 — this was flagged but not explicitly re-confirmed).
 1. **Verify the cron fixes actually worked** — check the new "Automation
    status" panel after 24h; use "Generate Lessons Now" in the meantime,
    no need to wait on cron for content to flow.
-2. **Domain decision** — pick a name/domain before building the real theme
-   (theme branding depends on it). Shortlist: `lrn3.com`, `getlrn3.com`,
-   `lrn3.io`, `tryLRN3.com`, `learn3x.com`, `skill3.io`. None verified
-   available from this sandbox — check a registrar. LRN3 direction adopted
-   from the owner's own idea (see Branding direction above).
+2. **Confirm `magister7.com` is registered and pointed at hosting** — name
+   is decided (see Branding direction). If not registered yet, do that now.
+   If it's a new domain (not just an alias for the existing cPanel account),
+   decide: fresh WordPress install directly on it vs. migrating the existing
+   `quantaprojex.com/tutify/` site — fresh install is cheap right now given
+   how little content exists.
 3. **Custom "generate any course" builder** — a form: title + description +
    optional reference links/keywords → AI outline. Queued, not yet built:
    the reference-links part is worth doing properly with Claude's server-side
@@ -132,10 +144,10 @@ see `DEPLOY.md` step 4 — this was flagged but not explicitly re-confirmed).
    more free API key, same pattern as the Anthropic key.
 5. **Ship a real theme/skin** — modern, mobile-first, app-like (think career/skills
    app, not "online university course"), aimed at 18-40 working professionals,
-   built around whatever domain/name gets picked — independent of content
-   (goal: skin swappable without touching content).
-6. **Spot-check lesson quality at the new 3-minute length** — shorter format
-   is new, worth a read-through before it scales up.
+   built around the Magister7 name — independent of content (goal: skin
+   swappable without touching content).
+6. **Spot-check lesson quality at ~7 minutes** — worth a read-through
+   periodically regardless of length target.
 7. **Add TTS audio per lesson** (Amazon Polly or Google Cloud TTS — cheap).
 8. **Add PDF booklet export** per module/course.
 9. **Object storage wiring** (Backblaze B2 or Cloudflare R2) once media
