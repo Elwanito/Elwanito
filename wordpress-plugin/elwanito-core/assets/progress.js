@@ -42,9 +42,52 @@
 			} );
 	}
 
+	function checkQuiz( container ) {
+		var items   = container.querySelectorAll( '.elwanito-quiz-item' );
+		var correct = 0;
+
+		items.forEach( function ( item ) {
+			var correctIndex = item.getAttribute( 'data-correct' );
+			var selected      = item.querySelector( 'input[type="radio"]:checked' );
+			var feedback      = item.querySelector( '.elwanito-quiz-feedback' );
+			var explanation   = item.querySelector( '.elwanito-quiz-explanation' );
+
+			item.classList.remove( 'elwanito-correct', 'elwanito-incorrect', 'elwanito-unanswered' );
+
+			if ( ! selected ) {
+				item.classList.add( 'elwanito-unanswered' );
+				feedback.textContent = 'Pick an answer first.';
+				feedback.hidden = false;
+				return;
+			}
+
+			var isCorrect = selected.value === correctIndex;
+			item.classList.add( isCorrect ? 'elwanito-correct' : 'elwanito-incorrect' );
+			feedback.textContent = isCorrect ? 'Correct!' : 'Not quite.';
+			feedback.hidden = false;
+			explanation.hidden = false;
+
+			if ( isCorrect ) {
+				correct++;
+			}
+		} );
+
+		var scoreEl = container.querySelector( '.elwanito-quiz-score' );
+		if ( scoreEl ) {
+			scoreEl.textContent = 'Score: ' + correct + ' / ' + items.length;
+			scoreEl.hidden = false;
+		}
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		document.querySelectorAll( '.elwanito-resume-code' ).forEach( function ( el ) {
 			el.textContent = getStoredCode() || 'not generated yet';
+		} );
+
+		document.querySelectorAll( '.elwanito-check-answers' ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				checkQuiz( button.closest( '.elwanito-lesson-footer' ) );
+			} );
 		} );
 
 		document.querySelectorAll( '.elwanito-mark-complete' ).forEach( function ( button ) {

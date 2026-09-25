@@ -19,6 +19,8 @@ class Elwanito_Progress {
 	}
 
 	public function enqueue_assets() {
+		wp_enqueue_style( 'elwanito-style', ELWANITO_PLUGIN_URL . 'assets/style.css', array(), ELWANITO_VERSION );
+
 		wp_register_script( 'elwanito-progress', ELWANITO_PLUGIN_URL . 'assets/progress.js', array(), ELWANITO_VERSION, true );
 		wp_localize_script(
 			'elwanito-progress',

@@ -44,6 +44,47 @@ and constraints (budget, legal, safety policy).
   permissions issue. Every fix ships as a plugin file the owner uploads and
   tests themselves; there is no way around this, don't re-attempt it.
 
+## Branding direction (new)
+
+Owner's idea, adopted: lessons target **~3 minutes**, not 7. Working concept
+name: **LRN3** ("learn in 3 [minutes]") - short, describes the mechanic
+directly. "Tutify" is out (name collision found). See "Next steps" for the
+concrete domain shortlist - not yet purchased, availability unverified from
+this sandbox (can't reach domain registrars from here either).
+
+## Status as of last session (2026-09-25)
+
+Fixed in this session (all shipped as elwanito-core v0.3.0):
+- **Markdown was never converted to HTML** - lessons displayed literal `**`/`-`/`|`
+  characters instead of bold/lists/tables. Root cause found and fixed with a
+  custom line-by-line Markdown-to-HTML converter (no Composer/SSH available
+  to pull in a library) - tested against real captured API output, including
+  the tricky "intro sentence immediately followed by a list, no blank line"
+  case that a naive block-based converter gets wrong. A "Reformat Existing
+  Lessons" button in settings re-renders lessons published before this fix.
+- **Quizzes didn't grade** - only had a "mark complete" button. Now real
+  radio-button questions with a "Check Answers" button that grades each
+  question, shows correct/incorrect, reveals the explanation, and shows a
+  score. Known limitation: this is client-side only (the correct answer sits
+  in a data attribute in the page source) - fine for a free self-check quiz,
+  not for anything higher-stakes; server-side grading would be the fix if
+  that ever matters.
+- **No mobile-friendly styling at all** - added `assets/style.css`: readable
+  typography, horizontally-scrollable tables (mobile tables are otherwise a
+  common breakage point), 44px+ touch targets on quiz options and buttons.
+- **Cron reliability was unverifiable** - added an "Automation status" panel
+  in settings showing whether the daily event is even scheduled, when it's
+  next due, and the last time wp-cron.php actually fired vs. last time it
+  actually generated something - lets the owner self-diagnose "cron isn't
+  configured on cPanel" vs. "it's firing but automation is toggled off."
+- **No way to generate more than one lesson on demand** - "Generate Lessons
+  Now" takes a count (capped at 10/click - shared hosting PHP timeouts, each
+  lesson is a real sequential API call - click again for more).
+- **No way to type a topic directly** - "Add a topic or course manually" form
+  in settings, independent of the AI-outline flow.
+- Lessons retargeted to ~3 minutes (150-200 words, 3 quiz questions) instead
+  of ~7 minutes, matching the LRN3 direction.
+
 ## Status as of last session
 
 **Working end-to-end:** WordPress installed at `quantaprojex.com/tutify/` →
@@ -70,25 +111,42 @@ see `DEPLOY.md` step 4 — this was flagged but not explicitly re-confirmed).
 
 ## Next steps, in priority order
 
-1. **Confirm the cPanel cron job is real** (not just the setting toggle) —
-   otherwise "10/day" silently does nothing when no one visits the site.
-2. **Spot-check 5-10 published lessons for quality** — accuracy, tone, no
-   safety-policy violations, no PMI trademark/endorsement claims slipping
-   through. Auto-publish means nothing is gating this anymore.
-3. **Ship a real theme/skin** — modern, mobile-first, app-like (think career/skills
-   app, not "online university course"), aimed at 18-40 working professionals —
-   independent of content (goal: skin swappable without touching content).
-4. **Add TTS audio per lesson** (Amazon Polly or Google Cloud TTS — cheap).
-5. **Add PDF booklet export** per module/course.
-6. **Object storage wiring** (Backblaze B2 or Cloudflare R2) once media
+1. **Verify the cron fixes actually worked** — check the new "Automation
+   status" panel after 24h; use "Generate Lessons Now" in the meantime,
+   no need to wait on cron for content to flow.
+2. **Domain decision** — pick a name/domain before building the real theme
+   (theme branding depends on it). Shortlist: `lrn3.com`, `getlrn3.com`,
+   `lrn3.io`, `tryLRN3.com`, `learn3x.com`, `skill3.io`. None verified
+   available from this sandbox — check a registrar. LRN3 direction adopted
+   from the owner's own idea (see Branding direction above).
+3. **Custom "generate any course" builder** — a form: title + description +
+   optional reference links/keywords → AI outline. Queued, not yet built:
+   the reference-links part is worth doing properly with Claude's server-side
+   web_fetch tool (lets the model actually read the provided links, not just
+   see the URL text) rather than rushed — next session's first job.
+4. **Images/infographics in lessons** — Claude's API doesn't generate images
+   directly. Two-part plan: (a) simple inline-SVG "key takeaway" callouts
+   generated from lesson content, no external API/cost — quick win; (b) real
+   stock photos via a free-tier API (Unsplash or Pexels, openly-licensed,
+   fits the "cite open source" requirement) — needs the owner to grab one
+   more free API key, same pattern as the Anthropic key.
+5. **Ship a real theme/skin** — modern, mobile-first, app-like (think career/skills
+   app, not "online university course"), aimed at 18-40 working professionals,
+   built around whatever domain/name gets picked — independent of content
+   (goal: skin swappable without touching content).
+6. **Spot-check lesson quality at the new 3-minute length** — shorter format
+   is new, worth a read-through before it scales up.
+7. **Add TTS audio per lesson** (Amazon Polly or Google Cloud TTS — cheap).
+8. **Add PDF booklet export** per module/course.
+9. **Object storage wiring** (Backblaze B2 or Cloudflare R2) once media
    generation starts producing real file volume.
-7. **Legal/compliance basics**: privacy policy, cookie/consent banner,
-   accessible design, before applying for AdSense.
-8. **Apply for Google AdSense** once there's enough real content + the
-   pages above exist.
-9. **Second certification track** once PMP is validated and stable.
-10. **Multi-language expansion** once the single-language pipeline is proven.
-11. **SEO push + trending-topics agent** (goals #13/#14 from the original ask)
+10. **Legal/compliance basics**: privacy policy, cookie/consent banner,
+    accessible design, before applying for AdSense.
+11. **Apply for Google AdSense** once there's enough real content + the
+    pages above exist.
+12. **Second certification track** once PMP is validated and stable.
+13. **Multi-language expansion** once the single-language pipeline is proven.
+14. **SEO push + trending-topics agent** (goals #13/#14 from the original ask)
     — later-stage, once there's a content base worth promoting.
 
 ## For the next Claude session picking this up cold

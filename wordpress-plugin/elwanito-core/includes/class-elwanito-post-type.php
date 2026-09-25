@@ -81,17 +81,26 @@ class Elwanito_Post_Type {
 			<?php if ( is_array( $quiz ) && ! empty( $quiz ) ) : ?>
 				<h3>Check your understanding</h3>
 				<ol class="elwanito-quiz">
-					<?php foreach ( $quiz as $q ) : ?>
-						<li>
-							<p><?php echo esc_html( $q['question'] ?? '' ); ?></p>
-							<ul>
-								<?php foreach ( (array) ( $q['options'] ?? array() ) as $option ) : ?>
-									<li><?php echo esc_html( $option ); ?></li>
+					<?php foreach ( $quiz as $index => $q ) : ?>
+						<li class="elwanito-quiz-item" data-correct="<?php echo esc_attr( isset( $q['correct_index'] ) ? absint( $q['correct_index'] ) : 0 ); ?>">
+							<p class="elwanito-quiz-question"><?php echo esc_html( $q['question'] ?? '' ); ?></p>
+							<ul class="elwanito-quiz-options">
+								<?php foreach ( (array) ( $q['options'] ?? array() ) as $opt_index => $option ) : ?>
+									<li>
+										<label>
+											<input type="radio" name="elwanito-q-<?php echo esc_attr( $post_id . '-' . $index ); ?>" value="<?php echo esc_attr( $opt_index ); ?>">
+											<?php echo esc_html( $option ); ?>
+										</label>
+									</li>
 								<?php endforeach; ?>
 							</ul>
+							<p class="elwanito-quiz-feedback" hidden></p>
+							<p class="elwanito-quiz-explanation" hidden><?php echo esc_html( $q['explanation'] ?? '' ); ?></p>
 						</li>
 					<?php endforeach; ?>
 				</ol>
+				<button type="button" class="elwanito-check-answers button">Check Answers</button>
+				<p class="elwanito-quiz-score" hidden></p>
 			<?php endif; ?>
 			<button type="button" class="elwanito-mark-complete" data-lesson-id="<?php echo esc_attr( $post_id ); ?>">
 				Mark lesson complete

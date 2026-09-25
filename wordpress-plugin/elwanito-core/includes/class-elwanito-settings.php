@@ -135,28 +135,67 @@ class Elwanito_Settings {
 			</form>
 
 			<?php if ( isset( $_GET['elwanito_queued'] ) ) : ?>
-				<div class="notice notice-success"><p>Outline generated: <?php echo (int) $_GET['elwanito_queued']; ?> topics added to the queue.</p></div>
+				<div class="notice notice-success"><p>Topic(s) added to the queue: <?php echo (int) $_GET['elwanito_queued']; ?>.</p></div>
 			<?php elseif ( isset( $_GET['elwanito_generated'] ) ) : ?>
-				<div class="notice notice-success"><p>Lesson generated - check the <a href="<?php echo esc_url( admin_url( 'admin.php?page=elwanito-review' ) ); ?>">Review Queue</a>.</p></div>
+				<div class="notice notice-success"><p><?php echo (int) $_GET['elwanito_generated']; ?> lesson(s) generated - check your site or the <a href="<?php echo esc_url( admin_url( 'admin.php?page=elwanito-review' ) ); ?>">Review Queue</a>.</p></div>
+			<?php elseif ( isset( $_GET['elwanito_reformatted'] ) ) : ?>
+				<div class="notice notice-success"><p>Reformatted <?php echo (int) $_GET['elwanito_reformatted']; ?> existing lesson(s) to proper HTML.</p></div>
 			<?php elseif ( isset( $_GET['elwanito_error'] ) ) : ?>
 				<div class="notice notice-error"><p><?php echo esc_html( wp_unslash( $_GET['elwanito_error'] ) ); ?></p></div>
 			<?php endif; ?>
 
 			<hr>
+			<h2>Automation status</h2>
+			<?php $status = Elwanito_Cron::status(); ?>
+			<table class="widefat" style="max-width:420px;">
+				<tr><td>Daily schedule registered?</td><td><?php echo $status['scheduled'] ? '✅ yes' : '❌ no'; ?></td></tr>
+				<tr><td>Next scheduled run</td><td><?php echo esc_html( $status['next_run'] ?: '—' ); ?></td></tr>
+				<tr><td>Last time wp-cron.php actually fired</td><td><?php echo esc_html( $status['last_check'] ?: 'never yet - your cPanel cron job is likely not reaching wp-cron.php' ); ?></td></tr>
+				<tr><td>Last automated generation</td><td><?php echo esc_html( $status['last_generation'] ?: 'never yet' ); ?></td></tr>
+			</table>
+			<p class="description">If "last time wp-cron.php fired" stays "never" after 24 hours, your cPanel Cron Job isn't actually reaching the site - re-check the exact URL and command in DEPLOY.md. In the meantime, use "Generate Lessons Now" below whenever you like - no cron required.</p>
+
+			<hr>
 			<h2>Generate a course outline now</h2>
-			<p>Uses the outline model once to propose ~20-30 bite-sized lesson topics for the certification above, and adds them to the topics queue for the daily pipeline to work through.</p>
+			<p>Uses the outline model once to propose ~20-30 bite-sized lesson topics for the certification above, and adds them to the topics queue.</p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'elwanito_generate_outline' ); ?>
 				<input type="hidden" name="action" value="elwanito_generate_outline">
 				<?php submit_button( 'Generate Outline', 'secondary' ); ?>
 			</form>
 
-			<h2>Generate one lesson right now</h2>
-			<p>Pulls the oldest queued topic and generates its lesson immediately, instead of waiting for the daily cron. Good for testing.</p>
+			<h2>Generate lessons right now</h2>
+			<p>Pulls the oldest queued topics and generates them immediately - no need to wait for cron. Max <?php echo (int) Elwanito_Pipeline::MAX_GENERATE_NOW_BATCH; ?> per click (each one is a real API call); click again for more.</p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'elwanito_generate_now' ); ?>
 				<input type="hidden" name="action" value="elwanito_generate_now">
-				<?php submit_button( 'Generate One Lesson Now', 'secondary' ); ?>
+				<label>How many? <input type="number" name="count" min="1" max="<?php echo (int) Elwanito_Pipeline::MAX_GENERATE_NOW_BATCH; ?>" value="1" style="width:80px;"></label>
+				<?php submit_button( 'Generate Lessons Now', 'secondary', 'submit', false ); ?>
+			</form>
+
+			<h2>Add a topic or course manually</h2>
+			<p>Type any topic directly into the queue - doesn't have to come from an AI-generated outline.</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'elwanito_add_topic' ); ?>
+				<input type="hidden" name="action" value="elwanito_add_topic">
+				<p>
+					<label>Certification/course <input type="text" name="certification" value="<?php echo esc_attr( $certification ); ?>" style="width:100%;max-width:420px;"></label>
+				</p>
+				<p>
+					<label>Module (optional) <input type="text" name="module" placeholder="e.g. Risk Management" style="width:100%;max-width:420px;"></label>
+				</p>
+				<p>
+					<label>Topic <input type="text" name="topic" placeholder="e.g. How to calculate expected monetary value" required style="width:100%;max-width:420px;"></label>
+				</p>
+				<?php submit_button( 'Add to Queue', 'secondary' ); ?>
+			</form>
+
+			<h2>Fix formatting on already-published lessons</h2>
+			<p>One-time cleanup: re-renders older lessons (created before the Markdown fix) into proper HTML. Safe to run more than once - already-fixed lessons are skipped.</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'elwanito_reformat_existing' ); ?>
+				<input type="hidden" name="action" value="elwanito_reformat_existing">
+				<?php submit_button( 'Reformat Existing Lessons', 'secondary' ); ?>
 			</form>
 		</div>
 		<?php

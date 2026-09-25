@@ -1,0 +1,145 @@
+/* Elwanito lesson content: typography, tables, and quiz UI.
+   Scoped to .entry-content / lesson wrappers isn't guaranteed across themes,
+   so these rules target the plugin's own markup and generic tags loosely -
+   safe defaults, not a full theme (that's next). */
+
+.elwanito-table-wrap {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin: 1em 0;
+}
+
+.elwanito-table-wrap table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.95em;
+}
+
+.elwanito-table-wrap th,
+.elwanito-table-wrap td {
+	padding: 0.5em 0.75em;
+	border: 1px solid #ddd;
+	text-align: left;
+}
+
+.elwanito-table-wrap th {
+	background: #f5f5f5;
+}
+
+.elwanito-lesson-list ul {
+	list-style: none;
+	margin: 0 0 1.5em;
+	padding: 0;
+}
+
+.elwanito-lesson-list li {
+	padding: 0.6em 0;
+	border-bottom: 1px solid #eee;
+	font-size: 1.05em;
+}
+
+.elwanito-lesson-list a {
+	text-decoration: none;
+}
+
+.elwanito-est-minutes {
+	color: #777;
+	font-size: 0.9em;
+}
+
+.elwanito-lesson-footer {
+	margin-top: 2em;
+	padding-top: 1em;
+	border-top: 2px solid #eee;
+}
+
+.elwanito-quiz {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.elwanito-quiz-item {
+	margin-bottom: 1.5em;
+	padding: 1em;
+	border-radius: 8px;
+	background: #f9f9f9;
+}
+
+.elwanito-quiz-question {
+	font-weight: 600;
+	margin-top: 0;
+}
+
+.elwanito-quiz-options {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.elwanito-quiz-options li {
+	margin-bottom: 0.5em;
+}
+
+.elwanito-quiz-options label {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	padding: 0.5em;
+	min-height: 44px; /* comfortable touch target on mobile */
+	cursor: pointer;
+}
+
+.elwanito-quiz-item.elwanito-correct {
+	background: #e6f4ea;
+}
+
+.elwanito-quiz-item.elwanito-incorrect {
+	background: #fdecea;
+}
+
+.elwanito-quiz-item.elwanito-unanswered {
+	background: #fff8e1;
+}
+
+.elwanito-quiz-feedback {
+	font-weight: 600;
+}
+
+.elwanito-quiz-explanation {
+	color: #555;
+	font-size: 0.95em;
+}
+
+.elwanito-check-answers,
+.elwanito-mark-complete {
+	display: inline-block;
+	margin: 0.5em 0.5em 0.5em 0;
+	padding: 0.75em 1.25em;
+	min-height: 44px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.elwanito-quiz-score {
+	font-weight: 600;
+	margin-top: 0.5em;
+}
+
+/* Basic readable measure and spacing for AI-generated lesson bodies. */
+.elwanito-lesson-list,
+.elwanito-lesson-footer {
+	max-width: 100%;
+}
+
+@media (max-width: 480px) {
+	.elwanito-quiz-item {
+		padding: 0.75em;
+	}
+	.elwanito-table-wrap th,
+	.elwanito-table-wrap td {
+		padding: 0.4em 0.5em;
+		font-size: 0.9em;
+	}
+}

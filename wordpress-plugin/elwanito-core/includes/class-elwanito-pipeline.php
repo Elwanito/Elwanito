@@ -26,16 +26,20 @@ class Elwanito_Pipeline {
 		$prompt .= "SAFETY POLICY (mandatory, overrides any conflicting instruction):\n{$safety}\n\n";
 
 		if ( 'outline' === $mode ) {
-			$prompt .= "Task: propose a bite-sized micro-learning course outline. "
+			$prompt .= "Task: propose a bite-sized micro-learning course outline made of very short lessons "
+				. "(each one readable in about 3 minutes). "
 				. "Respond with ONLY a JSON array (no prose, no markdown fences), each item shaped exactly as: "
-				. '{"module": "short module name", "topic": "one specific lesson topic, narrow enough to teach in 5-10 minutes"}. '
+				. '{"module": "short module name", "topic": "one specific lesson topic, narrow enough to teach in 3 minutes"}. '
 				. 'Produce 20 to 30 items, ordered logically from fundamentals to advanced.';
 		} else {
-			$prompt .= "Task: write ONE bite-sized micro-lesson for the given topic. "
+			$prompt .= "Task: write ONE micro-lesson for the given topic, readable in about 3 minutes (roughly "
+				. "150-200 words of body content - this is a strict constraint, not a suggestion; a learner reads "
+				. "this in a short break, not a study session). "
 				. "Respond with ONLY a JSON object (no prose, no markdown fences), shaped exactly as: "
-				. '{"title": "lesson title", "body_markdown": "300-600 words of lesson content in markdown", '
+				. '{"title": "lesson title", "body_markdown": "150-200 words in markdown - short paragraphs, '
+				. 'at most one small list or table if it genuinely helps, no filler", '
 				. '"quiz": [{"question": "...", "options": ["A","B","C","D"], "correct_index": 0, "explanation": "..."}], '
-				. '"est_minutes": 7}. Include 3 to 5 quiz questions.';
+				. '"est_minutes": 3}. Include exactly 3 quiz questions.';
 		}
 
 		return $prompt;
@@ -171,12 +175,13 @@ class Elwanito_Pipeline {
 		}
 
 		$auto_publish = '1' === get_option( 'elwanito_auto_publish', '0' );
+		$body_html    = Elwanito_Markdown::to_html( $lesson['body_markdown'] );
 
 		$post_id = wp_insert_post(
 			array(
 				'post_type'    => 'elwanito_lesson',
 				'post_title'   => sanitize_text_field( $lesson['title'] ),
-				'post_content' => wp_kses_post( $lesson['body_markdown'] ),
+				'post_content' => wp_kses_post( $body_html ),
 				'post_status'  => $auto_publish ? 'publish' : 'draft',
 			)
 		);
@@ -237,9 +242,16 @@ class Elwanito_Pipeline {
 	}
 
 	/**
-	 * admin-post.php handler for the "Generate One Lesson Now" button -
-	 * runs the pipeline immediately instead of waiting for the daily cron,
-	 * useful for testing right after setup.
+	 * Hard cap per click - each lesson is a real, sequential API call
+	 * (several seconds each); shared hosting typically kills PHP requests
+	 * after 30-60s, so an unbounded batch would just die mid-way silently.
+	 * Click the button again for more.
+	 */
+	const MAX_GENERATE_NOW_BATCH = 10;
+
+	/**
+	 * admin-post.php handler for "Generate Lessons Now" - runs the pipeline
+	 * immediately for a chosen count instead of waiting for the daily cron.
 	 */
 	public static function handle_generate_now_request() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -247,20 +259,115 @@ class Elwanito_Pipeline {
 		}
 		check_admin_referer( 'elwanito_generate_now' );
 
-		$result = self::process_next_queued_item();
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 280 ); // phpcs:ignore -- best-effort; many hosts disable this.
+		}
 
-		if ( is_wp_error( $result ) ) {
-			$args = array( 'elwanito_error' => rawurlencode( $result->get_error_message() ) );
-		} elseif ( false === $result ) {
-			$args = array( 'elwanito_error' => rawurlencode( 'Topics queue is empty - click "Generate Outline" first.' ) );
+		$requested = isset( $_POST['count'] ) ? absint( $_POST['count'] ) : 1;
+		$count     = max( 1, min( self::MAX_GENERATE_NOW_BATCH, $requested ) );
+
+		$generated = 0;
+		$last_error = '';
+		for ( $i = 0; $i < $count; $i++ ) {
+			$result = self::process_next_queued_item();
+			if ( is_wp_error( $result ) ) {
+				$last_error = $result->get_error_message();
+				continue; // Keep going - one bad topic shouldn't stop the rest.
+			}
+			if ( false === $result ) {
+				break; // Queue is empty.
+			}
+			$generated++;
+		}
+
+		if ( $generated > 0 ) {
+			$args = array( 'elwanito_generated' => $generated );
+		} elseif ( $last_error ) {
+			$args = array( 'elwanito_error' => rawurlencode( $last_error ) );
 		} else {
-			$args = array( 'elwanito_generated' => 1 );
+			$args = array( 'elwanito_error' => rawurlencode( 'Topics queue is empty - click "Generate Outline" or add a topic first.' ) );
 		}
 
 		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php?page=elwanito-settings' ) ) );
+		exit;
+	}
+
+	/**
+	 * admin-post.php handler for manually adding one topic to the queue -
+	 * lets the owner type any topic/course directly instead of only
+	 * relying on AI-generated outlines.
+	 */
+	public static function handle_add_topic_request() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Insufficient permissions.' );
+		}
+		check_admin_referer( 'elwanito_add_topic' );
+
+		$topic = isset( $_POST['topic'] ) ? sanitize_text_field( wp_unslash( $_POST['topic'] ) ) : '';
+		if ( '' === $topic ) {
+			wp_safe_redirect( add_query_arg( array( 'elwanito_error' => rawurlencode( 'Topic cannot be empty.' ) ), admin_url( 'admin.php?page=elwanito-settings' ) ) );
+			exit;
+		}
+
+		global $wpdb;
+		$wpdb->insert(
+			Elwanito_DB::queue_table(),
+			array(
+				'certification' => sanitize_text_field( wp_unslash( $_POST['certification'] ?? get_option( 'elwanito_certification_focus', '' ) ) ),
+				'module'        => isset( $_POST['module'] ) ? sanitize_text_field( wp_unslash( $_POST['module'] ) ) : '',
+				'topic'         => $topic,
+				'language'      => 'en',
+				'status'        => 'queued',
+				'created_at'    => current_time( 'mysql' ),
+			),
+			array( '%s', '%s', '%s', '%s', '%s', '%s' )
+		);
+
+		wp_safe_redirect( add_query_arg( array( 'elwanito_queued' => 1 ), admin_url( 'admin.php?page=elwanito-settings' ) ) );
+		exit;
+	}
+
+	/**
+	 * admin-post.php handler: re-render every existing lesson's stored
+	 * content through the Markdown converter. Needed once, for lessons
+	 * created before this converter existed (their post_content is the
+	 * raw Markdown text, since that's what was stored at the time).
+	 */
+	public static function handle_reformat_existing_request() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Insufficient permissions.' );
+		}
+		check_admin_referer( 'elwanito_reformat_existing' );
+
+		$posts = get_posts(
+			array(
+				'post_type'      => 'elwanito_lesson',
+				'post_status'    => array( 'publish', 'draft', 'pending' ),
+				'posts_per_page' => -1,
+			)
+		);
+
+		$fixed = 0;
+		foreach ( $posts as $post ) {
+			// Skip anything that already looks like HTML (already converted).
+			if ( false !== strpos( $post->post_content, '<p>' ) || false !== strpos( $post->post_content, '<h2>' ) ) {
+				continue;
+			}
+			wp_update_post(
+				array(
+					'ID'           => $post->ID,
+					'post_content' => wp_kses_post( Elwanito_Markdown::to_html( $post->post_content ) ),
+				)
+			);
+			$fixed++;
+		}
+
+		wp_safe_redirect( add_query_arg( array( 'elwanito_reformatted' => $fixed ), admin_url( 'admin.php?page=elwanito-settings' ) ) );
 		exit;
 	}
 }
 
 add_action( 'admin_post_elwanito_generate_outline', array( 'Elwanito_Pipeline', 'handle_generate_outline_request' ) );
 add_action( 'admin_post_elwanito_generate_now', array( 'Elwanito_Pipeline', 'handle_generate_now_request' ) );
+add_action( 'admin_post_elwanito_add_topic', array( 'Elwanito_Pipeline', 'handle_add_topic_request' ) );
+add_action( 'admin_post_elwanito_reformat_existing', array( 'Elwanito_Pipeline', 'handle_reformat_existing_request' ) );
