@@ -48,6 +48,27 @@
 	font-size: 0.9em;
 }
 
+.elwanito-takeaway-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75em;
+	margin: 0 0 1.5em;
+	padding: 1em 1.25em;
+	border-radius: 8px;
+	background: #fff8e1;
+	border-left: 4px solid #f5a623;
+}
+
+.elwanito-takeaway-icon {
+	font-size: 1.4em;
+	line-height: 1;
+}
+
+.elwanito-takeaway-card p {
+	margin: 0;
+	font-weight: 600;
+}
+
 .elwanito-lesson-footer {
 	margin-top: 2em;
 	padding-top: 1em;

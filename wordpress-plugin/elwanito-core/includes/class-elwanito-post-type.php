@@ -64,16 +64,27 @@ class Elwanito_Post_Type {
 	}
 
 	/**
-	 * Render the quiz beneath the lesson body on the frontend, and expose
-	 * a "mark complete" button wired to the guest/registered progress API.
+	 * Prepend a "key takeaway" callout and append the quiz + mark-complete
+	 * button around the lesson body on the frontend. The takeaway is the
+	 * cheap, no-external-API version of "add pictures/infographics" - a
+	 * visually distinct highlighted card, not a photo. Real images
+	 * (stock photos via a free API, or actual generated graphics) are a
+	 * separate, bigger piece of work - not done here.
 	 */
 	public function append_quiz( $content ) {
 		if ( ! is_singular( 'elwanito_lesson' ) || ! in_the_loop() || ! is_main_query() ) {
 			return $content;
 		}
 
-		$post_id = get_the_ID();
-		$quiz    = json_decode( get_post_meta( $post_id, '_elwanito_quiz', true ), true );
+		$post_id  = get_the_ID();
+		$quiz     = json_decode( get_post_meta( $post_id, '_elwanito_quiz', true ), true );
+		$takeaway = get_post_meta( $post_id, '_elwanito_key_takeaway', true );
+
+		$takeaway_html = '';
+		if ( $takeaway ) {
+			$takeaway_html = '<div class="elwanito-takeaway-card"><span class="elwanito-takeaway-icon">💡</span><p>'
+				. esc_html( $takeaway ) . '</p></div>';
+		}
 
 		ob_start();
 		?>
@@ -107,7 +118,7 @@ class Elwanito_Post_Type {
 			</button>
 		</div>
 		<?php
-		return $content . ob_get_clean();
+		return $takeaway_html . $content . ob_get_clean();
 	}
 
 	/**

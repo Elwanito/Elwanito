@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Elwanito Core
  * Description: AI content pipeline, guest progress tracking, and an owner approval queue for the certification tutorial platform. Generates unofficial exam-prep lessons and quizzes via the Anthropic API, holds everything in a draft review queue until approved.
- * Version: 0.3.1
+ * Version: 0.4.0
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  * Text Domain: elwanito-core
@@ -12,13 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ELWANITO_VERSION', '0.3.1' );
+define( 'ELWANITO_VERSION', '0.4.0' );
 define( 'ELWANITO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ELWANITO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-db.php';
 require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-settings.php';
 require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-ai-client.php';
+require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-ai-client-openai.php';
+require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-ai-provider.php';
 require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-markdown.php';
 require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-pipeline.php';
 require_once ELWANITO_PLUGIN_DIR . 'includes/class-elwanito-post-type.php';
@@ -53,9 +55,17 @@ function elwanito_deactivate() {
 register_deactivation_hook( __FILE__, 'elwanito_deactivate' );
 
 /**
- * Boot the plugin.
+ * Boot the plugin. Also re-runs dbDelta whenever the plugin version has
+ * moved on since activation - dbDelta is safe to re-run (it only adds
+ * what's missing, never drops data), so schema changes in future updates
+ * apply automatically on the next page load instead of requiring the
+ * owner to deactivate/reactivate the plugin.
  */
 function elwanito_init() {
+	if ( get_option( 'elwanito_db_version' ) !== ELWANITO_VERSION ) {
+		Elwanito_DB::create_tables();
+	}
+
 	new Elwanito_Settings();
 	new Elwanito_Post_Type();
 	new Elwanito_Approval_Queue();

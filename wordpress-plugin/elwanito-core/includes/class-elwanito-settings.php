@@ -44,9 +44,14 @@ class Elwanito_Settings {
 
 	public function register_settings() {
 		$fields = array(
+			'elwanito_ai_provider'               => 'sanitize_text_field',
 			'elwanito_anthropic_api_key'         => 'sanitize_text_field',
 			'elwanito_model_outline'             => 'sanitize_text_field',
 			'elwanito_model_bulk'                => 'sanitize_text_field',
+			'elwanito_openai_base_url'           => 'sanitize_text_field',
+			'elwanito_openai_api_key'            => 'sanitize_text_field',
+			'elwanito_openai_model_outline'      => 'sanitize_text_field',
+			'elwanito_openai_model_bulk'         => 'sanitize_text_field',
 			'elwanito_certification_focus'       => 'sanitize_text_field',
 			'elwanito_safety_policy'             => 'sanitize_textarea_field',
 			'elwanito_auto_publish'              => array( $this, 'sanitize_checkbox' ),
@@ -68,9 +73,14 @@ class Elwanito_Settings {
 			return;
 		}
 
-		$api_key           = get_option( 'elwanito_anthropic_api_key', '' );
+		$provider           = get_option( 'elwanito_ai_provider', 'anthropic' );
+		$api_key            = get_option( 'elwanito_anthropic_api_key', '' );
 		$model_outline      = get_option( 'elwanito_model_outline', 'claude-sonnet-5' );
 		$model_bulk         = get_option( 'elwanito_model_bulk', 'claude-haiku-4-5' );
+		$openai_base_url    = get_option( 'elwanito_openai_base_url', '' );
+		$openai_api_key     = get_option( 'elwanito_openai_api_key', '' );
+		$openai_model_outline = get_option( 'elwanito_openai_model_outline', 'llama-3.1-8b-instant' );
+		$openai_model_bulk    = get_option( 'elwanito_openai_model_bulk', 'llama-3.1-8b-instant' );
 		$certification      = get_option( 'elwanito_certification_focus', 'PMP (Project Management Professional) - unofficial, independent study material' );
 		$safety_policy      = get_option( 'elwanito_safety_policy', self::default_safety_policy() );
 		$auto_publish       = get_option( 'elwanito_auto_publish', '0' );
@@ -82,7 +92,17 @@ class Elwanito_Settings {
 			<form method="post" action="options.php">
 				<?php settings_fields( self::OPTION_GROUP ); ?>
 
-				<h2>Anthropic API</h2>
+				<h2>AI Provider</h2>
+				<p>
+					<label for="elwanito_ai_provider"><strong>Which AI generates content?</strong></label><br>
+					<select id="elwanito_ai_provider" name="elwanito_ai_provider">
+						<option value="anthropic" <?php selected( $provider, 'anthropic' ); ?>>Anthropic (Claude) - paid, most reliable</option>
+						<option value="openai_compatible" <?php selected( $provider, 'openai_compatible' ); ?>>OpenAI-compatible endpoint - Groq/OpenRouter free tier, or your own self-hosted model</option>
+					</select>
+					<br><span class="description">Only the fields for whichever provider you pick below actually get used - safe to fill in both while comparing.</span>
+				</p>
+
+				<h3>Option A: Anthropic (Claude)</h3>
 				<p>
 					<label for="elwanito_anthropic_api_key"><strong>API Key</strong></label><br>
 					<input type="password" id="elwanito_anthropic_api_key" name="elwanito_anthropic_api_key"
@@ -90,14 +110,42 @@ class Elwanito_Settings {
 					<br><span class="description">From console.anthropic.com. Stored in your WordPress database, never leaves this site.</span>
 				</p>
 				<p>
-					<label for="elwanito_model_outline"><strong>Model for course outlines</strong> (structuring, higher quality)</label><br>
+					<label for="elwanito_model_outline"><strong>Model for course outlines</strong></label><br>
 					<input type="text" id="elwanito_model_outline" name="elwanito_model_outline"
 						value="<?php echo esc_attr( $model_outline ); ?>" style="width:100%;max-width:420px;">
 				</p>
 				<p>
-					<label for="elwanito_model_bulk"><strong>Model for bulk lesson generation</strong> (cheaper, high volume)</label><br>
+					<label for="elwanito_model_bulk"><strong>Model for bulk lesson generation</strong></label><br>
 					<input type="text" id="elwanito_model_bulk" name="elwanito_model_bulk"
 						value="<?php echo esc_attr( $model_bulk ); ?>" style="width:100%;max-width:420px;">
+				</p>
+
+				<h3>Option B: OpenAI-compatible endpoint</h3>
+				<p class="description">
+					Covers three different setups because they all speak the same API format: a free-tier hosted
+					open-source model (Groq, OpenRouter), or a model running on your own computer via Ollama or
+					llama.cpp's server - exposed to the internet through a free tunnel (e.g. Cloudflare Tunnel),
+					never by opening a port directly. Point Base URL at that tunnel's address.
+				</p>
+				<p>
+					<label for="elwanito_openai_base_url"><strong>Base URL</strong> (full chat-completions endpoint)</label><br>
+					<input type="text" id="elwanito_openai_base_url" name="elwanito_openai_base_url"
+						value="<?php echo esc_attr( $openai_base_url ); ?>" placeholder="e.g. https://api.groq.com/openai/v1/chat/completions" style="width:100%;max-width:420px;">
+				</p>
+				<p>
+					<label for="elwanito_openai_api_key"><strong>API Key</strong> (leave blank for a local Ollama server - it doesn't need one)</label><br>
+					<input type="password" id="elwanito_openai_api_key" name="elwanito_openai_api_key"
+						value="<?php echo esc_attr( $openai_api_key ); ?>" style="width:100%;max-width:420px;" autocomplete="off">
+				</p>
+				<p>
+					<label for="elwanito_openai_model_outline"><strong>Model for course outlines</strong></label><br>
+					<input type="text" id="elwanito_openai_model_outline" name="elwanito_openai_model_outline"
+						value="<?php echo esc_attr( $openai_model_outline ); ?>" placeholder="e.g. llama-3.1-8b-instant, or llama3.1 for local Ollama" style="width:100%;max-width:420px;">
+				</p>
+				<p>
+					<label for="elwanito_openai_model_bulk"><strong>Model for bulk lesson generation</strong></label><br>
+					<input type="text" id="elwanito_openai_model_bulk" name="elwanito_openai_model_bulk"
+						value="<?php echo esc_attr( $openai_model_bulk ); ?>" style="width:100%;max-width:420px;">
 				</p>
 
 				<h2>Content Focus &amp; Safety</h2>
@@ -171,6 +219,25 @@ class Elwanito_Settings {
 				<input type="hidden" name="action" value="elwanito_generate_now">
 				<label>How many? <input type="number" name="count" min="1" max="<?php echo (int) Elwanito_Pipeline::MAX_GENERATE_NOW_BATCH; ?>" value="1" style="width:80px;"></label>
 				<?php submit_button( 'Generate Lessons Now', 'secondary', 'submit', false ); ?>
+			</form>
+
+			<h2>Create a new course</h2>
+			<p>Generates a full outline (~20-30 topics) for a course you describe, independent of the "Certification focus" setting above - this is how the site grows beyond one certification. Fixed in this version: previously, every generation call used the single site-wide certification setting no matter what topic you queued, which is why other topics kept turning into more PMP content.</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'elwanito_generate_course' ); ?>
+				<input type="hidden" name="action" value="elwanito_generate_course">
+				<p>
+					<label>Course title <input type="text" name="course_title" placeholder="e.g. AWS Certified Cloud Practitioner" required style="width:100%;max-width:420px;"></label>
+				</p>
+				<p>
+					<label>Description <textarea name="course_description" rows="2" placeholder="One or two sentences on what this course covers" style="width:100%;max-width:420px;"></textarea></label>
+				</p>
+				<p>
+					<label>Reference keywords or links (optional)
+						<textarea name="course_refs" rows="2" placeholder="Links aren't fetched/read live yet - treated as text hints only, for now" style="width:100%;max-width:420px;"></textarea>
+					</label>
+				</p>
+				<?php submit_button( 'Generate Outline for This Course', 'secondary' ); ?>
 			</form>
 
 			<h2>Add a topic or course manually</h2>

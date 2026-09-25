@@ -63,6 +63,47 @@ better to install WordPress fresh there directly rather than migrate later
 from `quantaprojex.com/tutify/` - very little content exists yet, so this is
 the cheap moment to do that.
 
+## Status as of 2026-09-25, second session
+
+Fixed/built (elwanito-core v0.4.0):
+- **Root cause of "other topics kept becoming PMP" found and fixed**: the
+  system prompt sent to the AI always read the single site-wide
+  "Certification focus" setting, no matter what certification was actually
+  stored on the queued topic row. Every generation call now uses the
+  per-row certification, so different courses stay distinct.
+- **"Create a New Course" form** (Settings page): title + description +
+  optional keyword/link notes -> generates a full outline for that course
+  specifically, independent of the site's default certification setting.
+  Honest limitation: links are not fetched/read live yet - passed as text
+  context only. Reading links live needs Claude's server-side web-fetch
+  tool, which only works with the Anthropic provider - real next step, not
+  done here.
+- **Swappable AI provider**: settings now has an AI Provider picker -
+  Anthropic (Claude) or "OpenAI-compatible endpoint." The second option is
+  one client implementation that covers three different real setups
+  because they all speak the same wire format: Groq's free tier,
+  OpenRouter's free tier, AND a self-hosted open-source model on the
+  owner's own computer (Ollama or llama.cpp server, exposed via a free
+  Cloudflare Tunnel - never by opening a port directly). This is also the
+  concrete answer to "run an open model on my home computer and have the
+  site call it": point Base URL at the tunnel address, same as any other
+  provider.
+- **Retry-before-fail on generation errors**: a failed generation now
+  retries up to 3 times (goes back to 'queued') before being marked
+  permanently 'failed'. Matters specifically for a home-computer provider
+  that might just be offline that day - it self-heals on the next cron run
+  instead of getting stuck.
+- **"Key takeaway" callout card** - the first, cheap piece of "add
+  pictures/infographics": each lesson now asks the model for one punchy
+  takeaway sentence, rendered as a visually distinct highlighted card at
+  the top of the lesson. Not a photo or a generated image - a styled
+  HTML/CSS callout, zero extra API cost. Real images (stock photos via a
+  free Unsplash/Pexels API key, or actual generated graphics) are still
+  separate, bigger, not-yet-done work.
+- Auto-upgrading DB schema: plugin now re-runs its table setup whenever the
+  version changes, so schema changes (like the new retry-count column)
+  apply on next page load without needing deactivate/reactivate.
+
 ## Status as of last session (2026-09-25)
 
 Fixed in this session (all shipped as elwanito-core v0.3.0):
@@ -131,17 +172,15 @@ see `DEPLOY.md` step 4 — this was flagged but not explicitly re-confirmed).
    decide: fresh WordPress install directly on it vs. migrating the existing
    `quantaprojex.com/tutify/` site — fresh install is cheap right now given
    how little content exists.
-3. **Custom "generate any course" builder** — a form: title + description +
-   optional reference links/keywords → AI outline. Queued, not yet built:
-   the reference-links part is worth doing properly with Claude's server-side
-   web_fetch tool (lets the model actually read the provided links, not just
-   see the URL text) rather than rushed — next session's first job.
-4. **Images/infographics in lessons** — Claude's API doesn't generate images
-   directly. Two-part plan: (a) simple inline-SVG "key takeaway" callouts
-   generated from lesson content, no external API/cost — quick win; (b) real
-   stock photos via a free-tier API (Unsplash or Pexels, openly-licensed,
-   fits the "cite open source" requirement) — needs the owner to grab one
-   more free API key, same pattern as the Anthropic key.
+3. **Wire up live web-fetch for course reference links** — "Create a New
+   Course" exists and works, but links pasted in are text hints only, not
+   actually read. Needs Claude's server-side web_fetch tool (Anthropic
+   provider only) added to the outline-generation call.
+4. **Real images in lessons** — the "key takeaway" callout card is done
+   (cheap, no extra cost). Still open: actual stock photos via a free-tier
+   API (Unsplash or Pexels, openly-licensed, fits the "cite open source"
+   requirement) — needs the owner to grab one more free API key, same
+   pattern as the Anthropic key.
 5. **Ship a real theme/skin** — modern, mobile-first, app-like (think career/skills
    app, not "online university course"), aimed at 18-40 working professionals,
    built around the Magister7 name — independent of content (goal: skin
