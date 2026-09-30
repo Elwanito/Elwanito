@@ -22,3 +22,10 @@ The detector is a local proxy. Scores won't match Turnitin, GPTZero, Originality
 and those tools change constantly and disagree with each other, so "passes all checkers" can't be
 guaranteed by any tool. Use it to edit toward a natural voice, and check final text in the
 checkers you care about. Don't use it to pass off work where AI use is prohibited.
+
+## Deploy on cPanel
+1. Upload the `textlab/` folder contents to e.g. `~/textlab` (File Manager or git).
+2. cPanel > Setup Python App > Create Application: Python 3.9+, app root `textlab`,
+   startup file `passenger_wsgi.py`, entry point `application`.
+3. In that screen run `pip install -r requirements.txt` (or use the command shown at the top of the page).
+4. Add environment variable `ANTHROPIC_API_KEY`, then Restart.
