@@ -27,7 +27,7 @@ def test_short_text_not_judged():
 
 
 def test_rule_based_fallback(monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
     r = humanizer.humanize(AI)
     assert "—" not in r["text"] and "moreover" not in r["text"].lower()
     assert r["after"] <= r["before"]

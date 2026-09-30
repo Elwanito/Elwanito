@@ -1,10 +1,14 @@
 """Rewrite text so it reads like a person wrote it, checked against the local detector."""
+import json
 import os
 import re
+import urllib.request
 
 from detector import analyze, STOCK_PHRASES
 
-MODEL = os.environ.get("TEXTLAB_MODEL", "claude-sonnet-5-5")
+# Any OpenAI-compatible chat endpoint works. Defaults to Groq's free tier.
+BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
+MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
 
 SYSTEM = """You rewrite text so it reads like a real person wrote it quickly and knows the subject.
 Keep every fact, number, name and claim exactly as given. Do not add new claims or examples.
@@ -43,35 +47,43 @@ def rule_based(text: str) -> str:
     return re.sub(r"[ \t]{2,}", " ", out).strip()
 
 
-def _client():
-    import anthropic
-    return anthropic.Anthropic()
-
-
 def _rewrite(text: str, feedback: str = "", extra: str = "") -> str:
     prompt = text
     if feedback:
-        prompt = (f"{feedback}\n\nRewrite this again, fixing those problems:\n\n{text}")
+        prompt = f"{feedback}\n\nRewrite this again, fixing those problems:\n\n{text}"
     if extra:
         prompt = f"Extra style guidance from the user:\n{extra}\n\n{prompt}"
-    msg = _client().messages.create(
-        model=MODEL, max_tokens=4096, system=SYSTEM,
-        messages=[{"role": "user", "content": prompt}])
-    return "".join(b.text for b in msg.content if b.type == "text").strip()
+    body = json.dumps({
+        "model": MODEL, "temperature": 0.9, "max_tokens": 4096,
+        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
+    }).encode()
+    req = urllib.request.Request(
+        f"{BASE_URL}/chat/completions", body,
+        {"Content-Type": "application/json", "Authorization": f"Bearer {os.environ['LLM_API_KEY']}"})
+    with urllib.request.urlopen(req, timeout=90) as r:
+        return json.load(r)["choices"][0]["message"]["content"].strip()
 
 
 def humanize(text: str, target: int = 25, max_passes: int = 3, style: str = "") -> dict:
     before = analyze(text)
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    if not os.environ.get("LLM_API_KEY"):
         out = rule_based(text)
         after = analyze(out)
-        return {"text": out, "mode": "rule-based (set ANTHROPIC_API_KEY for full rewrite)",
+        return {"text": out, "mode": "rule-based (set LLM_API_KEY for full rewrite)",
                 "before": before.score, "after": after.score, "passes": 0, "reasons": after.reasons}
 
     current, best, best_score, passes = text, text, before.score, 0
     feedback = ""
     for passes in range(1, max_passes + 1):
-        current = _rewrite(text if passes == 1 else current, feedback, style)
+        try:
+            current = _rewrite(text if passes == 1 else current, feedback, style)
+        except Exception as e:  # rate limit, bad key, network
+            if passes == 1:
+                out = rule_based(text)
+                return {"text": out, "mode": f"rule-based fallback (LLM error: {e})",
+                        "before": before.score, "after": analyze(out).score, "passes": 0,
+                        "reasons": []}
+            break
         rep = analyze(current)
         if rep.score < best_score or best is text:
             best, best_score = current, rep.score
