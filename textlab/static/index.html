@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TextLab</title>
+<style>
+  :root { --bg:#fafafa; --fg:#1a1a1a; --card:#fff; --line:#ddd; --accent:#2563eb; --bad:#dc2626; --ok:#16a34a; --warn:#d97706; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111; --fg:#eee; --card:#1b1b1b; --line:#333; } }
+  body { margin:0; font:16px/1.5 system-ui,sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:900px; margin:0 auto; padding:24px 16px; }
+  textarea { width:100%; min-height:220px; padding:12px; box-sizing:border-box; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:8px; font:inherit; }
+  button { padding:10px 18px; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit; cursor:pointer; margin:8px 8px 8px 0; }
+  button.alt { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  button:disabled { opacity:.5; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-top:16px; }
+  .score { font-size:40px; font-weight:700; }
+  .bar { height:8px; border-radius:4px; background:var(--line); overflow:hidden; }
+  .bar > div { height:100%; }
+  mark { background:rgba(220,38,38,.25); color:inherit; border-radius:3px; padding:0 2px; }
+  small, .muted { color:#888; }
+  #out { white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>TextLab</h1>
+  <p class="muted">Check how AI-like a text reads, then rewrite it in a more natural voice.</p>
+  <textarea id="in" placeholder="Paste text here (40+ words)"></textarea>
+  <div>
+    <button id="detect">Detect</button>
+    <button id="humanize" class="alt">Humanize</button>
+    <label class="muted">Target score ≤ <input id="target" type="number" value="25" min="0" max="100" style="width:56px"></label>
+  </div>
+  <div id="result"></div>
+  <p class="muted"><small>The score comes from a local heuristic detector. It is a guide for editing, not a prediction of what Turnitin, GPTZero or any other commercial checker will say, and no tool can promise that.</small></p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const color = s => s < 25 ? 'var(--ok)' : s < 50 ? 'var(--warn)' : 'var(--bad)';
+
+async function post(url, body) {
+  const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if (!r.ok) throw new Error((await r.text()) || r.statusText);
+  return r.json();
+}
+function scoreCard(score, label, reasons) {
+  return `<div class="score" style="color:${color(score)}">${score}<small>/100</small></div>
+    <div><strong>${esc(label || '')}</strong></div>
+    <div class="bar"><div style="width:${score}%;background:${color(score)}"></div></div>
+    ${reasons && reasons.length ? '<ul>' + reasons.map(r => `<li>${esc(r)}</li>`).join('') + '</ul>' : ''}`;
+}
+async function run(btn, fn) {
+  btn.disabled = true; $('result').innerHTML = '<p class="muted">Working…</p>';
+  try { await fn(); } catch (e) { $('result').innerHTML = `<div class="card" style="color:var(--bad)">${esc(e.message)}</div>`; }
+  btn.disabled = false;
+}
+$('detect').onclick = e => run(e.target, async () => {
+  const d = await post('/api/detect', {text: $('in').value});
+  const html = d.sentences.map(s => s.flags.length ? `<mark title="${esc(s.flags.join(', '))}">${esc(s.text)}</mark>` : esc(s.text)).join(' ');
+  $('result').innerHTML = `<div class="card">${scoreCard(d.score, d.label, d.reasons)}</div>
+    <div class="card"><strong>Flagged sentences</strong> <small>(hover for why)</small><p>${html}</p></div>`;
+});
+$('humanize').onclick = e => run(e.target, async () => {
+  const d = await post('/api/humanize', {text: $('in').value, target: +$('target').value});
+  $('result').innerHTML = `<div class="card">
+    <p class="muted">Score ${d.before} → <strong style="color:${color(d.after)}">${d.after}</strong> · ${esc(d.mode)}${d.passes ? ` · ${d.passes} pass(es)` : ''}</p>
+    <div id="out">${esc(d.text)}</div>
+    <button class="alt" onclick="navigator.clipboard.writeText(document.getElementById('out').innerText)">Copy</button></div>`;
+});
+</script>
+</body>
+</html>
